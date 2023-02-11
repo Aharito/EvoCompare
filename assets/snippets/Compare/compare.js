@@ -27,12 +27,13 @@ function addToCompareList() {
         // Add the product to the comparison list
         compareList.push(productId);
         updateCompareListCookie(compareList);
-
-        // Update the button text and class
-        updateCompareButtonState(this);
-
-        renderCompareCount();
     }
+    // Update the button text and class
+    updateCompareButtonState(this);
+    // Update comparison table and count
+    renderCompareTable();
+    renderCompareCount();
+
 }
 
 function removeFromCompareList() {
@@ -46,15 +47,12 @@ function removeFromCompareList() {
         const index = compareList.indexOf(productId);
         compareList.splice(index, 1);
         updateCompareListCookie(compareList);
-
-        // Update the button text and class
-        updateCompareButtonState(this);
-
-        // Update comparison table
-        renderCompareTable();
-
-        renderCompareCount();
     }
+    // Update the button text and class
+    updateCompareButtonState(this);
+    // Update comparison table and count
+    renderCompareTable();
+    renderCompareCount();
 }
 
 function getCompareList() {
