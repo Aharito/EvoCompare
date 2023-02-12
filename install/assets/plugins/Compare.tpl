@@ -17,7 +17,7 @@
  * Сравнение товаров
  * 
  * @category    plugin
- * @version     1.2
+ * @version     1.0.0
  * @author      Aharito (https://aharito.ru)
  * @internal    @events OnWebPageInit,OnPageNotFound
  * @internal    @modx_category Compare
