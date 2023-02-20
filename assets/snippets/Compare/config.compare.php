@@ -11,18 +11,24 @@ $compareActiveClass = 'active';
 // (!!) Не действует параметр tvList, так как он автоматом формируется из rowsList и requiredList
 $params = [
     'ownerTPL' => '@CODE:
-        <div class="row page-block__grid mb-4">
-            <div class="table">
-                <table>
-                    [+wrap+]
-                </table>
-            </div>
-        </div>',
+    <div class="row page-block__grid mb-4">
+        <div class="table">
+            <table>
+                [+wrap+]
+            </table>
+        </div>
+    </div>',
     'topRowTpl' => '@CODE:<tr class="first"><td><b>Параметры<b></td>[+wrap+]</tr>',        
     // Это пример с инлайн-шаблоном
-    'topRowItemTpl' => '@CODE:<td><a href="[+url+]"><img class="img-fluid" style="width: 200px" src="[+picture+]"></a></td>',
+    'topRowItemTpl' => '@CODE:
+    <td>
+        <a href="[+url+]"><img class="img-fluid" style="width: 200px" src="[+picture+]"></a><br>
+        <span class="btn btn-sm btn-info my-3" data-role="compareButton" data-action="addToCompareList" data-id="[+id+]">
+            <i class="fas fa-chart-bar"></i> 
+        </span>
+    </td>',
     // А это пример с чанком
-    'topRowItemTpl' => '@CHUNK:topRowItemTpl',
+    //'topRowItemTpl' => '@CHUNK:topRowItemTpl',
     'rowTpl' => '@CODE:<tr class="[+class+]"><td><small><b>[+rowName+]</b></small></td>[+wrap+]</tr>',
     'paramTpl' => '@CODE:<td>[+value+]</td>',
     // Список полей документа, ТВ-параметров, препаре-"полей".
