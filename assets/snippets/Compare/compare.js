@@ -2,11 +2,6 @@ renderCompareTable();
 renderCompareCount();
 setAllCompareButtonsState();
 
-const compareClearButton = document.querySelector('[data-role="compareClearButton"]');
-if (compareClearButton) {
-    compareClearButton.addEventListener("click", clearCompareData);
-}
-
 function afterFilterComplete() {
     setAllCompareButtonsState();
 }
@@ -128,6 +123,14 @@ function setAllCompareButtonsState() {
             compareButton.addEventListener("click", addToCompareList);
         }
     });
+
+    // Find compare Clear button
+    const compareClearButton = document.querySelector('[data-role="compareClearButton"]');
+    if (compareClearButton) {
+        // To be on the safe side, we first remove the listener
+        compareClearButton.removeEventListener("click", clearCompareData);
+        compareClearButton.addEventListener("click", clearCompareData);
+    }
 }
 
 function renderCompareTable() {
@@ -137,7 +140,7 @@ function renderCompareTable() {
     }
 
     const compareList = getCompareList();
-    if (compareList.length !== 0) {
+    if (compareList.length >= 0) {///@HACK
         fetch("/compare-list-render", {
             method: "POST",
             headers: {
@@ -145,11 +148,11 @@ function renderCompareTable() {
             },
             body: JSON.stringify({ products: compareList })
         })
-        .then(response => response.text())
-        .then(html => {
-            tableWrapper.innerHTML = html;
-            setAllCompareButtonsState();
-        })
+            .then(response => response.text())
+            .then(html => {
+                tableWrapper.innerHTML = html;
+                setAllCompareButtonsState();
+            })
     } else {
         tableWrapper.innerHTML = '';
     }
