@@ -13,72 +13,85 @@ $compareMaxCountMsg = [
 if ($modx->event->name === 'OnPageNotFound') {
     // Render Compare table with products
     if (isset($_GET['q']) && $_GET['q'] == 'compare-list-render') {
-        $requiredParams = [
-            'idType' => 'documents',
-            'documents' => $_COOKIE['compare_list'],
-            'display' => $compareMaxCount,
-        ];
+        $html = '';
+        if (!empty($_COOKIE['compare_list'])) {
+            /**
+             * 1. Формируем массив из JSON'а с параметрами документов
+             */
 
-        /**
-         * Выбираем из списков rowsList и requiredList имена с подстрокой 'tv.'
-         * и формируем из таких имен список tvList (сначала удаляя префиксы) для вызова DocLister
-         */
-        $tvPrefix = "tv.";
-        $arr['tvList'] = array();
-        $params['tvList'] = '';
+            $requiredParams = [
+                'idType' => 'documents',
+                'documents' => $_COOKIE['compare_list'],
+                'display' => $compareMaxCount,
+            ];
 
-        foreach (['rowsList', 'requiredList'] as $listName) {
-            $params[$listName] = str_replace(' ', '', $params[$listName]);
+            // Выбираем из списков rowsList и requiredList имена с подстрокой 'tv.'
+            // и формируем из таких имен список tvList (сначала удаляя префиксы) для вызова DocLister
+            $tvPrefix = "tv.";
+            $arr['tvList'] = array();
+            $params['tvList'] = '';
 
-            if (!empty($params[$listName])) {
-                $arr[$listName] = explode(',', $params[$listName]);
+            foreach (['rowsList', 'requiredList'] as $listName) {
+                $params[$listName] = str_replace(' ', '', $params[$listName]);
 
-                foreach ($arr[$listName] as $paramName) {
-                    if (strpos($paramName, $tvPrefix) !== false) {
-                        $arr['tvList'][] = $paramName;
+                if (!empty($params[$listName])) {
+                    $arr[$listName] = explode(',', $params[$listName]);
+
+                    foreach ($arr[$listName] as $paramName) {
+                        if (strpos($paramName, $tvPrefix) !== false) {
+                            $arr['tvList'][] = $paramName;
+                        }
                     }
                 }
+                $params['tvList'] = str_replace($tvPrefix, '', implode(',', $arr['tvList']));
             }
-            $params['tvList'] = str_replace($tvPrefix, '', implode(',', $arr['tvList']));
-        }
 
-        $result = $modx->runSnippet('DocLister', array_merge($requiredParams, $params));
-        $result = json_decode($result, 1);
+            $result = $modx->runSnippet('DocLister', array_merge($requiredParams, $params));
+            $result = json_decode($result, 1);
+            //echo $modx->parseDocumentSource(var_dump($result));
 
-        $out = '';
-        /**
-         * Верхняя строка таблицы
-         */
-        $topRow = $ph['wrap'] = '';
-        foreach ($result as $document) {
-            $ph['wrap'] .= $DLT->parseChunk($params['topRowItemTpl'], $document);
-        }
-        $topRow = $DLT->parseChunk($params['topRowTpl'], $ph);
 
-        /**
-         * Строки в теле таблицы
-         */
-        $rows = $ph['wrap'] = '';
-        if (is_array($arr['rowsList']) && !empty($arr['rowsList'])) {
-            $arr['rowsNames'] = explode('|', $params['rowsNames']); // Имена для строк
-            $arr['rowsList'] = str_replace('.', '_', $arr['rowsList']); // В режиме АПИ у ТВ не точки, а подчеркивания
-            for ($i = 0; $i < count($arr['rowsList']); $i++) {
-                foreach ($result as $document) {
-                    //echo("Парам ".$paramName." Документ: ".$document['id']."<br>");
-                    $ph['value'] = $document[$arr['rowsList'][$i]];
-                    $ph['wrap'] .= $DLT->parseChunk($params['paramTpl'], $ph);
+            /**
+             * 2. Шаблонизируем сформированный массив с параметрами документов
+             */
+
+            // Верхняя строка таблицы
+            $topRow = $ph['wrap'] = '';
+            foreach ($result as $document) {
+                $ph['wrap'] .= $DLT->parseChunk($params['topRowItemTpl'], $document);
+            }
+            $topRow = $DLT->parseChunk($params['topRowTpl'], $ph);
+
+            //Строки в теле таблицы
+            $rows = $ph['wrap'] = '';
+            if (is_array($arr['rowsList']) && !empty($arr['rowsList'])) {
+                $arr['rowsNames'] = explode('|', $params['rowsNames']); // Имена для строк
+                $arr['rowsList'] = str_replace('.', '_', $arr['rowsList']); // В режиме АПИ у ТВ не точки, а подчеркивания
+                for ($i = 0; $i < count($arr['rowsList']); $i++) {
+                    foreach ($result as $document) {
+                        $ph['value'] = $document[$arr['rowsList'][$i]];
+                        $ph['wrap'] .= $DLT->parseChunk($params['paramTpl'], $ph);
+                    }
+                    $ph['class'] = ($i % 2) ? 'odd' : 'even';
+                    $ph['rowName'] =  $arr['rowsNames'][$i];
+                    $rows .= $DLT->parseChunk($params['rowTpl'], $ph);
+                    $ph['wrap'] = '';
                 }
-                $ph['class'] = ($i % 2) ? 'odd' : 'even';
-                $ph['rowName'] =  $arr['rowsNames'][$i];
-                $rows .= $DLT->parseChunk($params['rowTpl'], $ph);
-                $ph['wrap'] = '';
             }
-        }
-        $ph['wrap'] = $topRow . $rows;
-        $out = $DLT->parseChunk($params['ownerTPL'], $ph);
+            // Собираем вместе таблицу
+            $ph['wrap'] = $topRow . $rows;            
 
-        //echo $modx->parseDocumentSource(var_dump($result));
-        echo $modx->parseDocumentSource($out);
+            // Если всего 1 товар, то добавляем ещё напоминание, что 1 товар - это мало
+            if (count(explode(',', $_COOKIE['compare_list'])) == 1) {               
+                $ph['compareOneMsg'] = $DLT->parseChunk($params['compareOneTpl'], $ph);
+            } else {
+                $ph['compareOneMsg'] = '';
+            }
+            $html = $DLT->parseChunk($params['ownerTPL'], $ph);
+        } else {
+            $html = $DLT->parseChunk($params['compareEmptyTpl'], $ph);
+        }
+        echo $modx->parseDocumentSource($html);
         die();
     }
 } elseif ($modx->event->name === 'OnWebPageInit') {
